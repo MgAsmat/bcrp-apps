@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BCRP apps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0E1A;
+    --sidebar:#0B0F1D;
+    --panel:#131A2C;
+    --panel-2:#161d31;
+    --border:rgba(255,255,255,0.07);
+    --text:#F4F6FA;
+    --text-dim:#8B93A7;
+    --text-faint:#5C6478;
+    --blue:#3B6BF0;
+    --blue-soft:rgba(59,107,240,0.16);
+    --indigo:#5B5FE9;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    min-height:100vh;
+    overflow:hidden;
+  }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar{
+    width:250px;
+    flex:none;
+    background:var(--sidebar);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+  }
+  .brand{
+    display:flex;align-items:center;gap:10px;
+    padding:20px 20px 18px;
+    border-bottom:1px solid var(--border);
+  }
+  .brand-mark{
+    width:32px;height:32px;border-radius:9px;
+    background:linear-gradient(145deg,#5B7CFA,#5B5FE9);
+    display:flex;align-items:center;justify-content:center;
+    flex:none;
+  }
+  .brand-mark svg{width:17px;height:17px;}
+  .brand-name{font-size:15.5px;font-weight:700;letter-spacing:-.01em;color:var(--text);}
+
+  .nav-section{padding:22px 14px 0;}
+  .nav-label{
+    font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--text-faint);
+    padding:0 10px 10px;
+  }
+  .nav-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;}
+  .nav-item{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 12px;
+    border-radius:9px;
+    color:var(--text-dim);
+    font-size:14px;font-weight:500;
+    cursor:pointer;
+    border:none;background:none;
+    width:100%;text-align:left;
+    font-family:inherit;
+    transition:background .12s, color .12s;
+  }
+  .nav-item svg{width:17px;height:17px;flex:none;opacity:.9;}
+  .nav-item:hover{background:rgba(255,255,255,0.04);color:var(--text);}
+  .nav-item.active{background:var(--blue);color:#fff;}
+  .nav-item.active:hover{background:var(--blue);}
+
+  /* ===== MAIN ===== */
+  .main{flex:1;display:flex;flex-direction:column;height:100vh;min-width:0;}
+  .topbar{
+    height:57px;flex:none;
+    display:flex;align-items:center;
+    padding:0 28px;
+    border-bottom:1px solid var(--border);
+    font-size:13.5px;
+  }
+  .crumb-root{color:var(--text-faint);}
+  .crumb-sep{color:var(--text-faint);margin:0 8px;font-size:12px;}
+  .crumb-current{color:var(--text);font-weight:600;}
+
+  .view{flex:1;min-height:0;overflow:auto;}
+  .view iframe{width:100%;height:100%;border:none;display:block;background:#fff;}
+
+  /* ===== HOME ===== */
+  .home{padding:40px 32px;max-width:1180px;}
+  .home h1{
+    font-size:26px;font-weight:800;letter-spacing:-.02em;
+    margin:0 0 6px;color:var(--text);
+    display:flex;align-items:center;gap:10px;
+  }
+  .home .sub{color:var(--text-dim);font-size:14.5px;margin:0 0 22px;}
+
+  .callout{
+    display:flex;align-items:center;gap:14px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px 20px;
+    margin-bottom:24px;
+    color:var(--text-dim);
+    font-size:14px;
+  }
+  .callout .icon-btn{
+    width:32px;height:32px;border-radius:9px;flex:none;
+    background:var(--blue);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .callout .icon-btn svg{width:16px;height:16px;color:#fff;}
+  .callout strong{color:var(--text);font-weight:600;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+  .app-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px 20px;
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    cursor:pointer;
+    text-align:left;
+    font-family:inherit;
+    transition:border-color .15s, transform .15s;
+  }
+  .app-card:hover{border-color:rgba(255,255,255,0.16);transform:translateY(-1px);}
+  .app-card .label{font-size:15px;font-weight:600;color:var(--text);}
+  .app-card .card-icon{
+    width:36px;height:36px;border-radius:10px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .app-card .card-icon svg{width:18px;height:18px;color:#fff;}
+
+  @media (max-width:720px){
+    .sidebar{width:76px;}
+    .brand-name, .nav-label, .nav-item span{display:none;}
+    .nav-item{justify-content:center;}
+    .brand{justify-content:center;padding:20px 0 18px;}
+    .home{padding:28px 18px;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12h8M8 8h5M8 16h4"/></svg>
+    </div>
+    <span class="brand-name">BCRP apps</span>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Menú principal</div>
+    <ul class="nav-list" id="nav-list"></ul>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <span class="crumb-root">Inicio</span>
+    <span class="crumb-sep">›</span>
+    <span class="crumb-current" id="crumb-current">Home</span>
+  </div>
+  <div class="view" id="view"></div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN DE APPS
+   Para agregar una nueva app: súmala a este arreglo y coloca su
+   archivo HTML en /apps/. No hace falta tocar el resto del código.
+   ============================================================ */
+const APPS = [
+  {
+    id: "reporte-pte",
+    label: "Reporte PTE",
+    file: "apps/reporte-pte.html",
+    color: "linear-gradient(145deg,#4F7CFB,#3B6BF0)",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>`
+  },
+  {
+    id: "mesa-de-cuadros",
+    label: "Mesa de Cuadros",
+    file: "apps/mesa-de-cuadros.html",
+    color: "linear-gradient(145deg,#6C6FF0,#5B5FE9)",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`
+  }
+];
+
+const ICONS = {
+  home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>`,
+  arrowLeft: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>`
+};
+
+/* ============================================================
+   NAV
+   ============================================================ */
+const navList = document.getElementById("nav-list");
+
+function navItemHTML(id, label, iconSvg){
+  return `<li><button class="nav-item" data-id="${id}">${iconSvg}<span>${label}</span></button></li>`;
+}
+
+navList.innerHTML =
+  navItemHTML("home", "Home", ICONS.home) +
+  APPS.map(a => navItemHTML(a.id, a.label, a.icon)).join("");
+
+navList.querySelectorAll(".nav-item").forEach(btn => {
+  btn.addEventListener("click", () => { location.hash = btn.dataset.id; });
+});
+
+/* ============================================================
+   HOME VIEW
+   ============================================================ */
+function renderHome(){
+  const cards = APPS.map(a => `
+    <button class="app-card" data-id="${a.id}">
+      <span class="label">${a.label}</span>
+      <span class="card-icon" style="background:${a.color}">${a.icon}</span>
+    </button>
+  `).join("");
+
+  return `
+    <div class="home">
+      <h1>Hola, MG <span>👋</span></h1>
+      <p class="sub">¿Qué hacemos hoy?</p>
+
+      <div class="callout">
+        <span class="icon-btn">${ICONS.arrowLeft}</span>
+        <span>Usa el <strong>menú de la izquierda</strong> para acceder a tus opciones disponibles.</span>
+      </div>
+
+      <div class="grid">${cards}</div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+const view = document.getElementById("view");
+const crumbCurrent = document.getElementById("crumb-current");
+
+function setActiveNav(id){
+  navList.querySelectorAll(".nav-item").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.id === id);
+  });
+}
+
+function render(){
+  const id = (location.hash || "#home").slice(1);
+  const app = APPS.find(a => a.id === id);
+
+  if (app){
+    view.innerHTML = `<iframe src="${app.file}" title="${app.label}"></iframe>`;
+    crumbCurrent.textContent = app.label;
+    setActiveNav(app.id);
+  } else {
+    view.innerHTML = renderHome();
+    crumbCurrent.textContent = "Home";
+    setActiveNav("home");
+    view.querySelectorAll(".app-card").forEach(card => {
+      card.addEventListener("click", () => { location.hash = card.dataset.id; });
+    });
+  }
+}
+
+window.addEventListener("hashchange", render);
+render();
+</script>
+</body>
+</html>
