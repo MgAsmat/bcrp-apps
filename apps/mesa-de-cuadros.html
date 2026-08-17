@@ -4,193 +4,167 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mesa de Cuadros — BCRP</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
-    --ink:#0F1A2B;
-    --ink-2:#16233A;
-    --paper:#EEE7D6;
-    --paper-dim:#D9D0B8;
-    --slate:#8592A8;
-    --teal:#2E8C77;
-    --teal-dim:#1E5F51;
-    --gold:#CE9F3E;
-    --brick:#B85039;
-    --line: rgba(238,231,214,0.14);
+    --navy:#0f2247;
+    --navy-soft:#233a63;
+    --gold:#a9822f;
+    --gold-soft:#f3ead6;
+    --paper:#eef0f3;
+    --card:#ffffff;
+    --ink:#1c2230;
+    --ink-soft:#5a5f6a;
+    --line:#dcdfe4;
+    --ok-bg:#e4f5e9; --ok-fg:#1a7a3c;
+    --bad-bg:#fbe6e6; --bad-fg:#c62828;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
   body{
-    background:
-      repeating-linear-gradient(180deg, rgba(238,231,214,0.035) 0px, rgba(238,231,214,0.035) 1px, transparent 1px, transparent 34px),
-      var(--ink);
-    color:var(--paper);
-    font-family:'IBM Plex Sans', sans-serif;
-    -webkit-font-smoothing:antialiased;
-    min-height:100vh;
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:Arial, Helvetica, sans-serif;
+    padding:32px 16px 64px;
   }
-  .wrap{max-width:980px;margin:0 auto;padding:56px 24px 90px;}
-  header{margin-bottom:52px;position:relative;}
-  .eyebrow{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:12px;letter-spacing:.16em;text-transform:uppercase;
-    color:var(--gold);margin-bottom:14px;
+  .wrap{max-width:940px; margin:0 auto;}
+
+  .masthead{
+    background:var(--navy); color:#fff; padding:22px 28px; border-radius:6px;
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:6px;
+    margin-bottom:24px;
   }
-  h1{
-    font-family:'Fraunces',serif;
-    font-weight:500;
-    font-size:clamp(32px,5vw,48px);
-    line-height:1.05;
-    margin:0 0 16px;
-    color:var(--paper);
+  .masthead h1{
+    font-family:Georgia, 'Times New Roman', serif; font-weight:normal;
+    font-size:19px; letter-spacing:0.4px; margin:0;
   }
-  header p{
-    max-width:56ch;
-    color:var(--slate);
-    font-size:15.5px;
-    line-height:1.6;
-    margin:0;
-  }
-  .stamp{
-    position:absolute; top:-6px; right:0;
-    width:86px;height:86px;
-    border:1.5px solid var(--teal);
-    border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    transform:rotate(-9deg);
-    font-family:'IBM Plex Mono',monospace;
-    font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
-    color:var(--teal);text-align:center;line-height:1.4;
-    opacity:.75;
-  }
-  @media (max-width:640px){ .stamp{display:none;} }
+  .masthead span{font-size:11px; color:#b9c2d6; letter-spacing:0.5px; text-transform:uppercase;}
 
   .module{
-    background:var(--ink-2);
+    background:var(--card);
     border:1px solid var(--line);
     border-radius:6px;
-    margin-bottom:36px;
+    margin-bottom:24px;
     overflow:hidden;
   }
   .module-head{
-    padding:24px 28px 20px;
+    padding:22px 28px 18px;
     border-bottom:1px solid var(--line);
     display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;
   }
-  .module-head h2{
-    font-family:'Fraunces',serif;
-    font-weight:500;
-    font-size:23px;
-    margin:0 0 6px;
-    color:var(--paper);
+  .step-label{
+    font-size:11px; letter-spacing:0.8px; text-transform:uppercase; color:var(--gold);
+    font-weight:bold; margin:0 0 6px;
   }
-  .module-head p{margin:0;color:var(--slate);font-size:13.5px;max-width:52ch;line-height:1.55;}
+  .module-head h2{
+    font-family:Georgia, 'Times New Roman', serif;
+    font-weight:normal;
+    font-size:19px;
+    margin:0 0 6px;
+    color:var(--navy);
+  }
+  .module-head p{margin:0;color:var(--ink-soft);font-size:13px;max-width:52ch;line-height:19px;}
   .module-badge{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11px;color:var(--ink);background:var(--gold);
-    padding:4px 9px;border-radius:3px;white-space:nowrap;
-    letter-spacing:.03em;
+    font-size:11px; font-weight:bold; color:var(--navy); background:var(--gold-soft);
+    border:1px solid var(--line);
+    padding:5px 10px;border-radius:20px;white-space:nowrap;
+    letter-spacing:.2px;
   }
 
   .dropzone{
     margin:22px 28px 6px;
-    border:1.5px dashed var(--slate);
-    border-radius:5px;
+    border:1.5px dashed #c3cad6;
+    border-radius:8px;
     padding:26px 20px;
     text-align:center;
     cursor:pointer;
     transition:border-color .15s, background .15s;
-    font-size:14px;
-    color:var(--slate);
+    font-size:13.5px;
+    color:var(--ink-soft);
   }
   .dropzone:hover, .dropzone.drag{
-    border-color:var(--teal);
-    background:rgba(46,140,119,0.08);
-    color:var(--paper);
+    border-color:var(--gold);
+    background:var(--gold-soft);
+    color:var(--ink);
   }
-  .dropzone strong{color:var(--paper);font-weight:600;}
+  .dropzone strong{color:var(--ink);font-weight:bold;}
   .dropzone input{display:none;}
-  .dz-hint{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--slate);margin-top:8px;}
+  .dz-hint{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
 
   table{width:100%;border-collapse:collapse;margin-top:14px;}
   thead th{
     text-align:left;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
-    color:var(--slate);
+    font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-soft);
+    background:#f8f9fb;
     padding:9px 28px;
     border-top:1px solid var(--line);
     border-bottom:1px solid var(--line);
   }
   tbody td{
     padding:11px 28px;
-    font-size:13.5px;
+    font-size:13px;
     border-bottom:1px solid var(--line);
     vertical-align:middle;
   }
   tbody tr:last-child td{border-bottom:none;}
-  .col-n{font-family:'IBM Plex Mono',monospace;color:var(--gold);font-size:12px;width:28px;}
-  .col-src{color:var(--slate);}
-  .col-src .fname{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--paper);display:block;margin-top:2px;}
+  .col-n{color:var(--gold);font-weight:bold;font-size:12.5px;width:28px;}
+  .col-src{color:var(--ink-soft);}
+  .col-src .fname{font-size:12.5px;color:var(--navy);font-weight:bold;display:block;margin-top:2px;}
   .col-out code{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:12.5px;color:var(--paper);
+    font-family:Arial, Helvetica, sans-serif;
+    font-size:12.5px;color:var(--ink);background:none;
   }
   .badge{
     display:inline-flex;align-items:center;gap:5px;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;
-    padding:3px 8px;border-radius:3px;
+    font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;font-weight:bold;
+    padding:4px 9px;border-radius:20px;
   }
-  .badge.wait{color:var(--slate);background:rgba(133,146,168,0.12);}
-  .badge.ok{color:var(--teal);background:rgba(46,140,119,0.15);}
-  .badge.warn{color:var(--gold);background:rgba(206,159,62,0.15);}
+  .badge.wait{color:var(--ink-soft);background:#eef0f3;}
+  .badge.ok{color:var(--ok-fg);background:var(--ok-bg);}
+  .badge.warn{color:var(--gold);background:var(--gold-soft);}
   .dl-btn{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11.5px;
-    background:transparent;border:1px solid var(--teal-dim);color:var(--teal);
-    padding:5px 10px;border-radius:3px;cursor:pointer;
+    font-size:11.5px;font-weight:bold;
+    background:#fff;border:1px solid var(--navy);color:var(--navy);
+    padding:6px 12px;border-radius:5px;cursor:pointer;
   }
-  .dl-btn:hover{background:rgba(46,140,119,0.15);}
+  .dl-btn:hover{background:#f4f5f7;}
   select.reassign{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11.5px;
-    background:var(--ink);border:1px solid var(--slate);color:var(--paper);
-    padding:5px 6px;border-radius:3px;max-width:210px;
+    font-size:12px;
+    background:#fff;border:1px solid var(--line);color:var(--ink);
+    padding:6px 8px;border-radius:5px;max-width:210px;font-family:inherit;
   }
+  select.reassign:focus{outline:none;border-color:var(--gold);}
 
   .module-foot{
     display:flex;justify-content:space-between;align-items:center;
-    padding:18px 28px 24px;flex-wrap:wrap;gap:12px;
+    padding:18px 28px 22px;flex-wrap:wrap;gap:12px;
   }
-  .progress{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--slate);}
-  .progress b{color:var(--paper);}
+  .progress{font-size:12px;color:var(--ink-soft);}
+  .progress b{color:var(--navy);font-family:Georgia, serif;font-size:14px;}
   .zip-btn{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:12.5px;letter-spacing:.03em;
-    background:var(--teal);color:var(--ink);
-    border:none;padding:10px 18px;border-radius:4px;
-    cursor:pointer;font-weight:600;
+    font-size:12.5px;font-weight:bold;letter-spacing:.2px;
+    background:var(--navy);color:#fff;
+    border:none;padding:10px 18px;border-radius:5px;
+    cursor:pointer;
   }
-  .zip-btn:disabled{background:var(--slate);color:var(--ink-2);cursor:not-allowed;opacity:.5;}
-  .zip-btn:not(:disabled):hover{background:#38a68d;}
+  .zip-btn:disabled{background:#c3cad6;color:#fff;cursor:not-allowed;opacity:.7;}
+  .zip-btn:not(:disabled):hover{background:var(--navy-soft);}
 
   .extras-note{
     margin:0 28px 20px;
-    font-size:12.5px;color:var(--slate);
-    border-left:2px solid var(--gold);
-    padding:8px 14px;
-    background:rgba(206,159,62,0.06);
+    font-size:12.5px;color:var(--ink);
+    border-left:3px solid var(--gold);
+    padding:10px 14px;
+    background:var(--gold-soft);
+    border-radius:0 5px 5px 0;
   }
+  .extras-note strong{color:var(--navy);}
 
   footer{
-    text-align:center;color:var(--slate);font-size:12px;
-    font-family:'IBM Plex Mono',monospace;margin-top:40px;
+    text-align:center;color:var(--ink-soft);font-size:11.5px;
+    margin-top:32px;
   }
-  footer a{color:var(--teal);}
+  footer a{color:var(--gold);text-decoration:underline;}
 
   @media (max-width:700px){
     thead{display:none;}
@@ -203,26 +177,24 @@
 <body>
 <div class="wrap">
 
-  <header>
-    <div class="stamp">procesado<br>bcrp · mensual</div>
-    <div class="eyebrow">Series Regionales · EEM</div>
-    <h1>Mesa de Cuadros</h1>
-    <p>Suelta los archivos del mes tal como los descargas. Cada uno se reconoce por su nombre, se convierte a .xlsx y se renombra según la serie que le corresponde — sin macros.</p>
-  </header>
+  <div class="masthead">
+    <h1>BANCO CENTRAL DE RESERVA DEL PERÚ</h1>
+    <span>Mesa de Cuadros · Series Regionales y EEM</span>
+  </div>
 
   <!-- ============ MODULE 1: SERIES REGIONALES ============ -->
   <section class="module">
     <div class="module-head">
       <div>
+        <p class="step-label">Módulo 1 · Cuadros regionales</p>
         <h2>Series Regionales</h2>
-        <p>Renombra y convierte los 17 cuadros regionales del mes. Arrastra cualquier cantidad de archivos; cada uno se ubica automáticamente en su fila.</p>
       </div>
       <span class="module-badge" id="regional-count">0 / 17</span>
     </div>
 
     <div class="dropzone" id="dz-regional">
-      <strong>Arrastra aquí los archivos</strong> o haz clic para elegir · .xls / .xlsx
-      <div class="dz-hint">Se reconocen por el nombre original — no hace falta ordenarlos</div>
+      <p><strong>Arrastra aquí los archivos</strong> o haz clic para elegir</p>
+      <div class="dz-hint">.xls / .xlsx — se reconocen por el nombre original, no hace falta ordenarlos</div>
       <input type="file" id="input-regional" multiple accept=".xls,.xlsx">
     </div>
 
@@ -243,15 +215,15 @@
   <section class="module">
     <div class="module-head">
       <div>
+        <p class="step-label">Módulo 2 · Encuesta de Expectativas</p>
         <h2>EEM</h2>
-        <p>Extrae todas las hojas de los libros del mes y renombra las que tienen serie fija. Las hojas sin regla quedan al final para asignarlas a mano.</p>
       </div>
       <span class="module-badge" id="eem-count">0 / 8</span>
     </div>
 
     <div class="dropzone" id="dz-eem">
-      <strong>Arrastra aquí los libros del mes</strong> o haz clic para elegir · .xls / .xlsx
-      <div class="dz-hint">Normalmente: CuadroEEM_porZonas.xlsx y B-Resultados EEM-BCRP por Variables Macroeconómicas.xlsx</div>
+      <p><strong>Arrastra aquí los libros del mes</strong> o haz clic para elegir</p>
+      <div class="dz-hint">.xls / .xlsx — normalmente: CuadroEEM_porZonas.xlsx y B-Resultados EEM-BCRP por Variables Macroeconómicas.xlsx</div>
       <input type="file" id="input-eem" multiple accept=".xls,.xlsx">
     </div>
 
