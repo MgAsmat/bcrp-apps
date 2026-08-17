@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Reporte Mensual — BCRP</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --navy:#0f2247;
+    --navy-soft:#233a63;
+    --gold:#a9822f;
+    --gold-soft:#f3ead6;
+    --paper:#eef0f3;
+    --card:#ffffff;
+    --ink:#1c2230;
+    --ink-soft:#5a5f6a;
+    --line:#dcdfe4;
+    --ok-bg:#e4f5e9; --ok-fg:#1a7a3c;
+    --bad-bg:#fbe6e6; --bad-fg:#c62828;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:Arial, Helvetica, sans-serif;
+    padding:32px 16px 64px;
+  }
+  .wrap{max-width:760px; margin:0 auto;}
+  .masthead{
+    background:var(--navy); color:#fff; padding:22px 28px; border-radius:6px 6px 0 0;
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:6px;
+  }
+  .masthead h1{
+    font-family:Georgia, 'Times New Roman', serif; font-weight:normal;
+    font-size:19px; letter-spacing:0.4px; margin:0;
+  }
+  .masthead span{font-size:11px; color:#b9c2d6; letter-spacing:0.5px; text-transform:uppercase;}
+  .card{background:var(--card); border:1px solid var(--line); border-top:none; border-radius:0 0 6px 6px; padding:26px 28px 30px;}
+  .step-label{font-size:11px; letter-spacing:0.8px; text-transform:uppercase; color:var(--gold); font-weight:bold; margin:0 0 6px;}
+  .lede{font-size:13px; color:var(--ink-soft); margin:0 0 20px; line-height:19px;}
+
+  #drop{
+    border:1.5px dashed #c3cad6; border-radius:8px; padding:28px 20px; text-align:center;
+    cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  #drop:hover, #drop.drag{border-color:var(--gold); background:var(--gold-soft);}
+  #drop p{margin:0; font-size:13.5px; color:var(--ink);}
+  #drop p.sub{margin-top:4px; font-size:11.5px; color:var(--ink-soft);}
+  #fileInput{display:none;}
+
+  .fileTag{
+    display:none; align-items:center; gap:10px; margin-top:14px; font-size:12.5px;
+    background:#f8f9fb; border:1px solid var(--line); border-radius:6px; padding:9px 12px;
+  }
+  .fileTag.show{display:flex;}
+  .fileTag b{color:var(--navy);}
+  .fileTag button{
+    margin-left:auto; border:none; background:none; color:var(--ink-soft); font-size:12px;
+    cursor:pointer; text-decoration:underline;
+  }
+
+  .fields{display:none; margin-top:22px;}
+  .fields.show{display:block;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:5px; letter-spacing:0.2px;}
+  .field input{
+    width:100%; font-size:13.5px; padding:9px 11px; border:1px solid var(--line); border-radius:5px;
+    font-family:inherit; color:var(--ink);
+  }
+  .field input:focus{outline:none; border-color:var(--gold);}
+
+  .summary{display:none; gap:10px; margin:18px 0 4px;}
+  .summary.show{display:flex;}
+  .chip{flex:1; border-radius:6px; padding:12px 14px; border:1px solid var(--line);}
+  .chip .n{font-size:22px; font-weight:bold; font-family:Georgia, serif;}
+  .chip .l{font-size:10.5px; letter-spacing:0.5px; text-transform:uppercase; color:var(--ink-soft); margin-top:2px;}
+  .chip.ok{background:var(--ok-bg);} .chip.ok .n{color:var(--ok-fg);}
+  .chip.bad{background:var(--bad-bg);} .chip.bad .n{color:var(--bad-fg);}
+  .chip.total .n{color:var(--navy);}
+
+  .actions{display:none; gap:10px; margin-top:18px; flex-wrap:wrap;}
+  .actions.show{display:flex;}
+  .btn{
+    font-size:12.5px; font-weight:bold; padding:10px 18px; border-radius:5px; border:1px solid transparent;
+    cursor:pointer; letter-spacing:0.2px;
+  }
+  .btn-primary{background:var(--navy); color:#fff;}
+  .btn-primary:hover{background:var(--navy-soft);}
+  .btn-ghost{background:#fff; color:var(--navy); border-color:var(--navy);}
+  .btn-ghost:hover{background:#f4f5f7;}
+  .toast{font-size:11.5px; color:var(--ink-soft); align-self:center;}
+
+  .previewWrap{display:none; margin-top:26px;}
+  .previewWrap.show{display:block;}
+  .previewWrap .step-label{margin-top:6px;}
+  .browserBar{
+    background:#e4e6ea; border:1px solid var(--line); border-bottom:none; border-radius:8px 8px 0 0;
+    padding:9px 12px; display:flex; gap:6px; align-items:center;
+  }
+  .browserBar span{width:9px; height:9px; border-radius:50%; background:#c7cbd2; display:inline-block;}
+  iframe{
+    width:100%; height:560px; border:1px solid var(--line); border-radius:0 0 8px 8px; background:#fff;
+  }
+  .error{display:none; font-size:12.5px; color:var(--bad-fg); background:var(--bad-bg); border-radius:5px; padding:10px 12px; margin-top:14px;}
+  .error.show{display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>BANCO CENTRAL DE RESERVA DEL PERÚ</h1>
+    <span>Generador de reporte mensual</span>
+  </div>
+
+  <div class="card">
+    <p class="step-label">Paso 1 · Cargar archivo</p>
+    <p class="lede">Sube el Excel de seguimiento (vista exportada) y esta herramienta arma el correo con el mismo diseño de siempre, listo para copiar o descargar.</p>
+
+    <div id="drop">
+      <p><strong>Arrastra el Excel aquí</strong> o haz clic para elegirlo</p>
+      <p class="sub">.xlsx — la hoja "Rubro / Fecha de actualización / …"</p>
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+    </div>
+    <div class="fileTag" id="fileTag">
+      📄 <b id="fileName"></b><button id="clearFile">quitar</button>
+    </div>
+    <div class="error" id="errorBox"></div>
+
+    <div class="fields" id="fields">
+      <div class="field">
+        <label for="recipient">Destinatario</label>
+        <input type="text" id="recipient" value="María Gracia Asmat">
+      </div>
+      <div class="field">
+        <label for="titulo">Título del reporte (se toma del Excel, editable)</label>
+        <input type="text" id="titulo">
+      </div>
+    </div>
+
+    <div class="summary" id="summary">
+      <div class="chip total"><div class="n" id="cTotal">0</div><div class="l">Secciones</div></div>
+      <div class="chip ok"><div class="n" id="cOk">0</div><div class="l">Ok</div></div>
+      <div class="chip bad"><div class="n" id="cBad">0</div><div class="l">Falta actualizar</div></div>
+    </div>
+
+    <div class="actions" id="actions">
+      <button class="btn btn-primary" id="btnDownload">Descargar HTML del correo</button>
+      <button class="btn btn-ghost" id="btnCopy">Copiar HTML</button>
+      <span class="toast" id="toast"></span>
+    </div>
+
+    <div class="previewWrap" id="previewWrap">
+      <p class="step-label">Paso 2 · Vista previa</p>
+      <div class="browserBar"><span></span><span></span><span></span></div>
+      <iframe id="preview"></iframe>
+    </div>
+
+    <textarea id="codeBox" style="display:none; width:100%; height:160px; margin-top:14px; font-family:monospace; font-size:11px; padding:10px; border:1px solid var(--line); border-radius:6px;" readonly></textarea>
+  </div>
+</div>
+
+<script>
+const MESES = {enero:0,febrero:1,marzo:2,abril:3,mayo:4,junio:5,julio:6,agosto:7,setiembre:8,septiembre:8,octubre:9,noviembre:10,diciembre:11};
+
+function parsePeriod(str){
+  if(!str) return null;
+  str = String(str).trim();
+  let m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m) return new Date(+m[3], +m[2]-1, +m[1]);
+  m = str.match(/^([a-záéíóúñ]+)\s+(\d{4})$/i);
+  if(m){
+    const mi = MESES[m[1].toLowerCase()];
+    if(mi !== undefined) return new Date(+m[2], mi, 1);
+  }
+  return null;
+}
+
+function computeEstado(requerimiento, registrado){
+  const a = parsePeriod(registrado), b = parsePeriod(requerimiento);
+  if(a && b) return a.getTime() >= b.getTime() ? 'OK' : 'FALTA';
+  return String(requerimiento).trim() === String(registrado).trim() ? 'OK' : 'FALTA';
+}
+
+function escapeHtml(s){
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function parseWorkbook(ab){
+  const wb = XLSX.read(ab, {type:'array'});
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:null, raw:false});
+
+  const tituloPeriodo = rows[0] && rows[0][0] ? String(rows[0][0]).trim() : '';
+  let tipoReporte = '';
+  for(const r of rows.slice(0,7)){
+    if(r[0] && String(r[0]).toLowerCase().startsWith('tipo reporte')) tipoReporte = String(r[1]||'').trim();
+  }
+
+  let headerIdx = rows.findIndex(r => r[0] === 'Rubro');
+  if(headerIdx === -1) throw new Error('No se encontró la fila de encabezado "Rubro" en el Excel.');
+
+  const entries = [];
+  let currentSection = '';
+  for(let i = headerIdx+1; i < rows.length; i++){
+    const r = rows[i];
+    if(!r || !r[0]) continue;
+    const rubro = String(r[0]).trim();
+    const fechaActualizacion = r[1];
+    const requerimiento = r[3];
+    const periodoRegistrado = r[4];
+
+    const isDataRow = fechaActualizacion != null && String(fechaActualizacion).trim() !== '';
+    if(!isDataRow){
+      currentSection = rubro.replace(/^-+/, '').trim();
+      continue;
+    }
+    entries.push({
+      seccion: currentSection,
+      subtitulo: rubro,
+      fecha: periodoRegistrado != null ? String(periodoRegistrado).trim() : '',
+      estado: computeEstado(requerimiento, periodoRegistrado)
+    });
+  }
+
+  if(entries.length === 0) throw new Error('No se encontraron filas de datos (sin secciones registradas) en el Excel.');
+
+  applyManualOrder(entries);
+
+  return {tituloPeriodo, tipoReporte, entries};
+}
+
+// Fixed pairs that must always appear in this order, regardless of how they
+// come from the Excel. Matched by a stable keyword in `subtitulo` so it keeps
+// working even if the section numbering (7.7, 8.1, etc.) shifts month to month.
+const MANUAL_ORDER_PAIRS = [
+  ['Telefonía', 'elulares'], // "elulares" matches both "Distribución" and the "Dsitribución" typo seen in the Excel
+  ['Actividades Institucionales del Titular de la Institución', 'Actividades Institucionales de Alta Dirección']
+];
+
+function applyManualOrder(entries){
+  for(const [firstKw, secondKw] of MANUAL_ORDER_PAIRS){
+    const iFirst = entries.findIndex(e => e.subtitulo.includes(firstKw));
+    const iSecond = entries.findIndex(e => e.subtitulo.includes(secondKw));
+    if(iFirst === -1 || iSecond === -1) continue;
+    if(iFirst < iSecond) continue; // already in the desired order
+    const [item] = entries.splice(iFirst, 1);
+    entries.splice(iSecond, 0, item);
+  }
+}
+
+function buildEmailHtml({tituloPeriodo, tipoReporte, entries, destinatario}){
+  const rows = entries.map((e, idx) => {
+    const bg = idx % 2 === 0 ? '#ffffff' : '#f8f9fb';
+    const ok = e.estado === 'OK';
+    const dateColor = ok ? '#1a7a3c' : '#c62828';
+    const pillBg = ok ? '#e4f5e9' : '#fbe6e6';
+    const pillFg = ok ? '#1a7a3c' : '#c62828';
+    const pillTxt = ok ? 'OK' : 'FALTA ACTUALIZAR';
+    return `<tr>
+<td style="background-color:${bg}; padding:10px 12px; border:1px solid #dcdfe4; font-size:12.5px; color:#222222; line-height:16px;"><strong>${escapeHtml(e.seccion)}</strong><br><span style="color:#5a5f6a;">${escapeHtml(e.subtitulo)}</span></td>
+<td style="background-color:${bg}; padding:10px 12px; border:1px solid #dcdfe4; font-size:12.5px; color:${dateColor}; font-weight:bold; white-space:nowrap;">${escapeHtml(e.fecha)}</td>
+<td style="background-color:${bg}; padding:10px 12px; border:1px solid #dcdfe4; text-align:center; white-space:nowrap;">
+<span style="display:inline-block; background-color:${pillBg}; color:${pillFg}; font-size:10.5px; font-weight:bold; padding:4px 10px; border-radius:10px;">${pillTxt}</span>
+</td>
+</tr>`;
+  }).join('\n');
+
+  const tipoTxt = tipoReporte ? tipoReporte : 'mensual';
+  const tituloCap = tipoTxt.charAt(0).toUpperCase() + tipoTxt.slice(1);
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light">
+<title>Reporte ${tituloCap} - ${escapeHtml(tituloPeriodo)}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#eef0f3; font-family:Arial, Helvetica, sans-serif;">
+<span style="display:none; font-size:1px; color:#eef0f3; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+Avance del Reporte ${tituloCap} - ${escapeHtml(tituloPeriodo)}: revisa el estado de actualización de cada sección.
+</span>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef0f3;">
+<tr>
+<td align="center" style="padding:24px 12px;">
+
+<table role="presentation" width="700" cellpadding="0" cellspacing="0" border="0" style="width:700px; max-width:700px; background-color:#ffffff;">
+
+<tr>
+<td style="background-color:#0f2247; padding:24px 32px;" align="center">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td>
+<span style="color:#ffffff; font-size:19px; letter-spacing:0.5px; font-family:Georgia, 'Times New Roman', serif;">BANCO CENTRAL DE RESERVA DEL PERÚ</span>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<tr>
+<td style="padding:28px 32px 8px 32px;">
+<p style="margin:0 0 14px 0; font-size:14px; line-height:20px; color:#222222;">Estimado(a) <strong>${escapeHtml(destinatario)}</strong>,</p>
+<p style="margin:0; font-size:14px; line-height:20px; color:#222222;">Este es el avance del <strong>Reporte ${tipoTxt} - ${escapeHtml(tituloPeriodo)}</strong>:</p>
+</td>
+</tr>
+
+<tr>
+<td style="padding:16px 32px 8px 32px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; border:1px solid #dcdfe4;">
+<tr>
+<td style="background-color:#0f2247; color:#ffffff; font-size:12px; font-weight:bold; padding:10px 12px; border:1px solid #0f2247;">SECCIÓN</td>
+<td style="background-color:#0f2247; color:#ffffff; font-size:12px; font-weight:bold; padding:10px 12px; border:1px solid #0f2247; white-space:nowrap;">ÚLTIMA ACTUALIZACIÓN</td>
+<td style="background-color:#0f2247; color:#ffffff; font-size:12px; font-weight:bold; padding:10px 12px; border:1px solid #0f2247; text-align:center; white-space:nowrap;">ESTADO</td>
+</tr>
+${rows}
+</table>
+</td>
+</tr>
+
+<tr><td style="padding:8px 32px 28px 32px;"></td></tr>
+
+<tr>
+<td style="background-color:#f4f5f7; padding:18px 32px; border-top:1px solid #e2e4e8;" align="center">
+<p style="margin:0; font-size:11px; color:#8a8f98;">© ${new Date().getFullYear()} BCRP. Todos los derechos reservados.</p>
+</td>
+</tr>
+
+</table>
+</td>
+</tr>
+</table>
+
+</body>
+</html>`;
+}
+
+// ---- wiring ----
+let parsed = null;
+let generatedHtml = '';
+
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('fileInput');
+const fileTag = document.getElementById('fileTag');
+const fileName = document.getElementById('fileName');
+const errorBox = document.getElementById('errorBox');
+const fields = document.getElementById('fields');
+const recipientInput = document.getElementById('recipient');
+const tituloInput = document.getElementById('titulo');
+const summary = document.getElementById('summary');
+const actions = document.getElementById('actions');
+const previewWrap = document.getElementById('previewWrap');
+const preview = document.getElementById('preview');
+const toast = document.getElementById('toast');
+const codeBox = document.getElementById('codeBox');
+
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+drop.addEventListener('drop', e => {
+  e.preventDefault(); drop.classList.remove('drag');
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if(e.target.files[0]) handleFile(e.target.files[0]); });
+document.getElementById('clearFile').addEventListener('click', () => {
+  fileInput.value = '';
+  fileTag.classList.remove('show');
+  fields.classList.remove('show');
+  summary.classList.remove('show');
+  actions.classList.remove('show');
+  previewWrap.classList.remove('show');
+  errorBox.classList.remove('show');
+  parsed = null;
+});
+
+function handleFile(file){
+  errorBox.classList.remove('show');
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      parsed = parseWorkbook(ev.target.result);
+      fileName.textContent = file.name;
+      fileTag.classList.add('show');
+      fields.classList.add('show');
+      tituloInput.value = parsed.tituloPeriodo;
+      renderAll();
+    }catch(err){
+      errorBox.textContent = 'No se pudo leer el archivo: ' + err.message;
+      errorBox.classList.add('show');
+      fields.classList.remove('show');
+      summary.classList.remove('show');
+      actions.classList.remove('show');
+      previewWrap.classList.remove('show');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderAll(){
+  if(!parsed) return;
+  const ok = parsed.entries.filter(e => e.estado === 'OK').length;
+  const bad = parsed.entries.length - ok;
+  document.getElementById('cTotal').textContent = parsed.entries.length;
+  document.getElementById('cOk').textContent = ok;
+  document.getElementById('cBad').textContent = bad;
+  summary.classList.add('show');
+
+  generatedHtml = buildEmailHtml({
+    tituloPeriodo: tituloInput.value,
+    tipoReporte: parsed.tipoReporte,
+    entries: parsed.entries,
+    destinatario: recipientInput.value
+  });
+
+  preview.srcdoc = generatedHtml;
+  previewWrap.classList.add('show');
+  actions.classList.add('show');
+}
+
+recipientInput.addEventListener('input', renderAll);
+tituloInput.addEventListener('input', renderAll);
+
+document.getElementById('btnDownload').addEventListener('click', () => {
+  if(!generatedHtml) return;
+  const blob = new Blob([generatedHtml], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeTitulo = (tituloInput.value || 'reporte').replace(/\s+/g,'_').toLowerCase();
+  a.href = url;
+  a.download = `reporte_mensual_${safeTitulo}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast.textContent = 'Descargado ✓';
+  setTimeout(() => toast.textContent = '', 2000);
+});
+
+function legacyCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.top = '-1000px';
+  ta.style.left = '-1000px';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  ta.setSelectionRange(0, text.length);
+  let ok = false;
+  try{ ok = document.execCommand('copy'); }catch(e){ ok = false; }
+  document.body.removeChild(ta);
+  return ok;
+}
+
+document.getElementById('btnCopy').addEventListener('click', async () => {
+  if(!generatedHtml) return;
+  let ok = false;
+  if(navigator.clipboard && window.isSecureContext){
+    try{
+      await navigator.clipboard.writeText(generatedHtml);
+      ok = true;
+    }catch(e){ ok = false; }
+  }
+  if(!ok) ok = legacyCopy(generatedHtml);
+
+  if(ok){
+    toast.textContent = 'Copiado al portapapeles ✓';
+  }else{
+    // Last resort: select the code so the user can copy manually with Ctrl/Cmd+C
+    codeBox.style.display = 'block';
+    codeBox.value = generatedHtml;
+    codeBox.focus();
+    codeBox.select();
+    toast.textContent = 'No se pudo copiar solo — el texto quedó seleccionado, usa Ctrl/Cmd+C.';
+  }
+  setTimeout(() => toast.textContent = '', 4000);
+});
+</script>
+</body>
+</html>
