@@ -150,6 +150,24 @@
   .zip-btn:disabled{background:#c3cad6;color:#fff;cursor:not-allowed;opacity:.7;}
   .zip-btn:not(:disabled):hover{background:var(--navy-soft);}
 
+  .period-bar{
+    margin:22px 28px 0;
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+    font-size:12.5px;color:var(--ink-soft);
+  }
+  .period-bar label{display:flex;align-items:center;gap:6px;font-weight:bold;color:var(--ink);}
+  .period-bar input[type="number"], .period-bar select{
+    font-size:12.5px;
+    background:#fff;border:1px solid var(--line);color:var(--ink);
+    padding:6px 8px;border-radius:5px;font-family:inherit;width:78px;
+  }
+  .period-bar select{width:auto;}
+  .period-bar input:focus, .period-bar select:focus{outline:none;border-color:var(--gold);}
+  .period-hint code{
+    color:var(--navy);font-weight:bold;background:var(--gold-soft);
+    padding:2px 6px;border-radius:4px;
+  }
+
   .extras-note{
     margin:0 28px 20px;
     font-size:12.5px;color:var(--ink);
@@ -241,6 +259,50 @@
     </div>
   </section>
 
+  <!-- ============ MODULE 3: INMUEBLES ============ -->
+  <section class="module">
+    <div class="module-head">
+      <div>
+        <p class="step-label">Módulo 3 · Precios inmobiliarios</p>
+        <h2>Inmuebles</h2>
+      </div>
+      <span class="module-badge" id="inmuebles-count">0 / 3</span>
+    </div>
+
+    <div class="period-bar">
+      <label>Año
+        <input type="number" id="inmuebles-year" value="2026" min="2000" max="2100">
+      </label>
+      <label>Trimestre
+        <select id="inmuebles-quarter">
+          <option value="1">1</option>
+          <option value="2" selected>2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </label>
+      <span class="period-hint">se agrega al final del nombre de salida: <code id="period-preview">2026-2</code></span>
+    </div>
+
+    <div class="dropzone" id="dz-inmuebles">
+      <p><strong>Arrastra aquí los archivos</strong> o haz clic para elegir</p>
+      <div class="dz-hint">.xls / .xlsx — se reconocen por el nombre original, no hace falta ordenarlos</div>
+      <input type="file" id="input-inmuebles" multiple accept=".xls,.xlsx">
+    </div>
+
+    <table>
+      <thead>
+        <tr><th></th><th>Origen</th><th>Salida</th><th>Estado</th><th></th></tr>
+      </thead>
+      <tbody id="tbody-inmuebles"></tbody>
+    </table>
+
+    <div class="module-foot">
+      <span class="progress" id="progress-inmuebles"><b>0</b> de 3 listos</span>
+      <button class="zip-btn" id="zip-inmuebles" disabled>Descargar .zip</button>
+    </div>
+  </section>
+
   <footer>hecho para procesar cuadros mes a mes · todo ocurre en tu navegador, ningún archivo se sube a un servidor</footer>
 </div>
 
@@ -266,6 +328,12 @@ const REGIONAL_RULES = [
   ["Inversión Bruta Fija del Gobierno Nacional", "cuadro-regional-15"],
   ["Inversión Bruta Fija de Gobiernos Locales", "cuadro-regional-16"],
   ["Inversión Bruta Fija de los Gobiernos Regionales", "cuadro-regional-17"],
+].map(([match, output], i) => ({ n: i + 1, match, output }));
+
+const INMUEBLES_RULES = [
+  ["Base completa  - Alquiler", "precios-inmobiliarios-bd-desagregada-alquiler"],
+  ["Base completa - Venta", "precios-inmobiliarios-bd-desagregada-venta"],
+  ["Base de datos resumida", "precios-inmobiliarios-bd-resumida"],
 ].map(([match, output], i) => ({ n: i + 1, match, output }));
 
 const EEM_RULES = [
@@ -518,6 +586,73 @@ document.getElementById("zip-eem").addEventListener("click", async () => {
   eemExtras.forEach(ex => zip.file(`sin-regla/${ex.filename}`, ex.blob));
   const content = await zip.generateAsync({ type: "blob" });
   downloadBlob(content, "eem.zip");
+});
+
+/* ============================================================
+   MODULE 3 — INMUEBLES
+   ============================================================ */
+const inmueblesState = INMUEBLES_RULES.map(r => ({ rule: r, status: "wait", blob: null, srcName: null }));
+
+function inmueblesPeriod() {
+  const year = (document.getElementById("inmuebles-year").value || "").trim() || "0000";
+  const quarter = document.getElementById("inmuebles-quarter").value;
+  return `${year}-${quarter}`;
+}
+
+function renderInmuebles() {
+  document.getElementById("period-preview").textContent = inmueblesPeriod();
+  const tbody = document.getElementById("tbody-inmuebles");
+  tbody.innerHTML = "";
+  let done = 0;
+  inmueblesState.forEach(row => {
+    if (row.status === "ok") done++;
+    const outputName = `${row.rule.output}-${inmueblesPeriod()}`;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="col-n">${String(row.rule.n).padStart(2,"0")}</td>
+      <td class="col-src">${row.rule.match}${row.srcName ? `<span class="fname">${row.srcName}</span>` : ""}</td>
+      <td class="col-out"><code>${outputName}.xlsx</code></td>
+      <td>${row.status === "ok" ? `<span class="badge ok">✓ listo</span>` : `<span class="badge wait">esperando</span>`}</td>
+      <td>${row.status === "ok" ? `<button class="dl-btn" data-n="${row.rule.n}">Descargar</button>` : ""}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll(".dl-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const row = inmueblesState.find(r => r.rule.n == btn.dataset.n);
+      if (row) downloadBlob(row.blob, `${row.rule.output}-${inmueblesPeriod()}.xlsx`);
+    });
+  });
+  document.getElementById("inmuebles-count").textContent = `${done} / 3`;
+  document.getElementById("progress-inmuebles").innerHTML = `<b>${done}</b> de 3 listos`;
+  document.getElementById("zip-inmuebles").disabled = done === 0;
+}
+
+async function handleInmueblesFiles(files) {
+  for (const file of files) {
+    if (!/\.(xlsx|xls)$/i.test(file.name)) continue;
+    const rule = matchRule(stripExt(file.name), INMUEBLES_RULES);
+    if (!rule) continue; // sin coincidencia: se ignora silenciosamente, no pertenece a esta serie
+    try {
+      const wb = await readWorkbook(file);
+      const blob = workbookToBlob(wb);
+      const row = inmueblesState.find(r => r.rule.n === rule.n);
+      row.status = "ok"; row.blob = blob; row.srcName = file.name;
+      renderInmuebles();
+    } catch (e) { console.error("Error leyendo", file.name, e); }
+  }
+}
+
+setupDropzone(document.getElementById("dz-inmuebles"), document.getElementById("input-inmuebles"), handleInmueblesFiles);
+document.getElementById("inmuebles-year").addEventListener("input", renderInmuebles);
+document.getElementById("inmuebles-quarter").addEventListener("change", renderInmuebles);
+renderInmuebles();
+
+document.getElementById("zip-inmuebles").addEventListener("click", async () => {
+  const zip = new JSZip();
+  inmueblesState.filter(r => r.status === "ok").forEach(r => zip.file(`${r.rule.output}-${inmueblesPeriod()}.xlsx`, r.blob));
+  const content = await zip.generateAsync({ type: "blob" });
+  downloadBlob(content, `inmuebles-${inmueblesPeriod()}.zip`);
 });
 </script>
 </body>
