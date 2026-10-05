@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Limpiador de Texto — BCRP</title>
+<style>
+  :root{
+    --navy:#0f2247;
+    --navy-soft:#233a63;
+    --gold:#a9822f;
+    --gold-soft:#f3ead6;
+    --paper:#eef0f3;
+    --card:#ffffff;
+    --ink:#1c2230;
+    --ink-soft:#5a5f6a;
+    --line:#dcdfe4;
+    --ok-bg:#e4f5e9; --ok-fg:#1a7a3c;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:Arial, Helvetica, sans-serif;
+    padding:32px 16px 64px;
+  }
+  .wrap{max-width:940px; margin:0 auto;}
+  .masthead{
+    background:var(--navy); color:#fff; padding:22px 28px; border-radius:6px 6px 0 0;
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:6px;
+  }
+  .masthead h1{
+    font-family:Georgia, 'Times New Roman', serif; font-weight:normal;
+    font-size:19px; letter-spacing:0.4px; margin:0;
+  }
+  .masthead span{font-size:11px; color:#b9c2d6; letter-spacing:0.5px; text-transform:uppercase;}
+  .card{background:var(--card); border:1px solid var(--line); border-top:none; border-radius:0 0 6px 6px; padding:26px 28px 30px;}
+  .step-label{font-size:11px; letter-spacing:0.8px; text-transform:uppercase; color:var(--gold); font-weight:bold; margin:0 0 6px;}
+  .lede{font-size:13px; color:var(--ink-soft); margin:0 0 20px; line-height:19px;}
+
+  .panes{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:720px){ .panes{grid-template-columns:1fr;} }
+  textarea{
+    width:100%; height:340px; resize:vertical;
+    font-family:Arial, Helvetica, sans-serif; font-size:13.5px; line-height:20px;
+    padding:12px 14px; border:1px solid var(--line); border-radius:6px; color:var(--ink);
+    background:#fff;
+  }
+  textarea:focus{outline:none; border-color:var(--gold);}
+  #output{background:#f8f9fb;}
+
+  .actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; align-items:center;}
+  .btn{
+    font-size:12.5px; font-weight:bold; padding:10px 18px; border-radius:5px; border:1px solid transparent;
+    cursor:pointer; letter-spacing:0.2px;
+  }
+  .btn:disabled{opacity:.45; cursor:default;}
+  .btn-primary{background:var(--navy); color:#fff;}
+  .btn-primary:hover:not(:disabled){background:var(--navy-soft);}
+  .btn-ghost{background:#fff; color:var(--navy); border-color:var(--navy);}
+  .btn-ghost:hover:not(:disabled){background:#f4f5f7;}
+  .toast{font-size:11.5px; color:var(--ok-fg);}
+
+  .stats{margin-top:14px; font-size:12px; color:var(--ink-soft); line-height:19px; min-height:19px;}
+  .stats .pill{
+    display:inline-block; background:var(--gold-soft); color:var(--navy);
+    border-radius:20px; padding:2px 9px; margin:2px 4px 2px 0; font-size:11.5px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <h1>BANCO CENTRAL DE RESERVA DEL PERÚ</h1>
+    <span>Limpiador de texto</span>
+  </div>
+  <div class="card">
+    <p class="lede">Pega el texto en el recuadro de la izquierda. Se limpia automáticamente: letras “decorativas” Unicode (𝐧𝐞𝐠𝐫𝐢𝐭𝐚𝐬, 𝘤𝘶𝘳𝘴𝘪𝘷𝘢𝘴, ⓒⓘⓡⓒⓤⓛⓞⓢ, ᴠᴇʀsᴀʟɪᴛᴀs…), caracteres invisibles, espacios raros, comillas tipográficas y subrayados/tachados. Las tildes y la ñ se conservan.</p>
+
+    <div class="panes">
+      <div>
+        <p class="step-label">Paso 1 · Texto original</p>
+        <textarea id="input" placeholder="Pega aquí tu texto…" autofocus></textarea>
+      </div>
+      <div>
+        <p class="step-label">Paso 2 · Texto limpio</p>
+        <textarea id="output" readonly placeholder="Aquí aparecerá el resultado"></textarea>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btnCopy" disabled>Copiar resultado</button>
+      <button class="btn btn-ghost" id="btnClear">Limpiar todo</button>
+      <span class="toast" id="toast"></span>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</div>
+
+<script>
+/* Letras sin descomposición NFKC que se usan como "fuente" decorativa */
+const EXTRA_MAP = (() => {
+  const m = {};
+  // Versalitas (small caps)
+  const small = {
+    "ᴀ":"a","ʙ":"b","ᴄ":"c","ᴅ":"d","ᴇ":"e","ꜰ":"f","ɢ":"g","ʜ":"h","ɪ":"i","ᴊ":"j",
+    "ᴋ":"k","ʟ":"l","ᴍ":"m","ɴ":"n","ᴏ":"o","ᴘ":"p","ꞯ":"q","ʀ":"r","ꜱ":"s","ᴛ":"t",
+    "ᴜ":"u","ᴠ":"v","ᴡ":"w","ʏ":"y","ᴢ":"z"
+  };
+  Object.assign(m, small);
+  // Letras en círculo/cuadrado negativo: 🅐-🅩, 🅰-🆉
+  for (let i = 0; i < 26; i++){
+    const L = String.fromCharCode(65 + i);
+    m[String.fromCodePoint(0x1F150 + i)] = L;
+    m[String.fromCodePoint(0x1F170 + i)] = L;
+  }
+  return m;
+})();
+
+const RULES = [
+  { label: "letras decorativas", fn: t => {
+      const n = t.normalize("NFKC");
+      return [...n].map(c => EXTRA_MAP[c] ?? c).join("");
+  }},
+  { label: "subrayados / tachados", fn: t =>
+      t.replace(/[̵̲̳-̸⃐-⃿︠-︯]/g, "") },
+  { label: "caracteres invisibles", fn: t =>
+      t.replace(/[​-‏‪-‮⁠-⁤⁦-⁯﻿­᠎︀-️]/g, "") },
+  { label: "caracteres de control", fn: t =>
+      t.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, "") },
+  { label: "espacios especiales", fn: t =>
+      t.replace(/[   -   　]/g, " ") },
+  { label: "saltos de línea", fn: t =>
+      t.replace(/\r\n?|[\u2028\u2029\u0085]/g, "\n") },
+  { label: "comillas tipográficas", fn: t =>
+      t.replace(/[‘’‚‛′´]/g, "'")
+       .replace(/[“”„‟″«»]/g, '"') },
+  { label: "guiones", fn: t =>
+      t.replace(/[‐-―−]/g, "-") },
+  { label: "puntos suspensivos", fn: t => t.replace(/…/g, "...") },
+  { label: "espacios sobrantes", fn: t =>
+      t.replace(/\t/g, " ")
+       .replace(/ {2,}/g, " ")
+       .replace(/ +\n/g, "\n")
+       .replace(/\n +/g, "\n")
+       .replace(/\n{3,}/g, "\n\n")
+       .trim() }
+];
+
+function clean(text){
+  const applied = [];
+  for (const r of RULES){
+    const next = r.fn(text);
+    if (next !== text) applied.push(r.label);
+    text = next;
+  }
+  return { text, applied };
+}
+
+const input = document.getElementById("input");
+const output = document.getElementById("output");
+const btnCopy = document.getElementById("btnCopy");
+const btnClear = document.getElementById("btnClear");
+const toast = document.getElementById("toast");
+const stats = document.getElementById("stats");
+
+function update(){
+  const { text, applied } = clean(input.value);
+  output.value = text;
+  btnCopy.disabled = !text;
+  toast.textContent = "";
+  if (!input.value){ stats.innerHTML = ""; return; }
+  stats.innerHTML = applied.length
+    ? "Se corrigió: " + applied.map(a => `<span class="pill">${a}</span>`).join("")
+    : "El texto ya estaba limpio.";
+}
+
+input.addEventListener("input", update);
+
+btnCopy.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(output.value);
+  } catch {
+    output.select();
+    document.execCommand("copy");
+    output.setSelectionRange(0, 0);
+  }
+  toast.textContent = "✓ Copiado al portapapeles";
+  setTimeout(() => { toast.textContent = ""; }, 2500);
+});
+
+btnClear.addEventListener("click", () => {
+  input.value = "";
+  update();
+  input.focus();
+});
+</script>
+</body>
+</html>

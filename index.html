@@ -198,6 +198,13 @@ const APPS = [
     file: "apps/mesa-de-cuadros.html",
     color: "linear-gradient(145deg,#6C6FF0,#5B5FE9)",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`
+  },
+  {
+    id: "limpiador-texto",
+    label: "Limpiador de Texto",
+    file: "apps/limpiador-texto.html",
+    color: "linear-gradient(145deg,#2FB59A,#1E9C82)",
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"/><path d="M12 5v14"/><path d="M9 19h6"/><path d="M17 13l4 4m0-4-4 4"/></svg>`
   }
 ];
 
@@ -266,7 +273,7 @@ function render(){
   const app = APPS.find(a => a.id === id);
 
   if (app){
-    view.innerHTML = `<iframe src="${app.file}" title="${app.label}"></iframe>`;
+    view.innerHTML = `<iframe src="${app.file}" title="${app.label}" allow="clipboard-write"></iframe>`;
     crumbCurrent.textContent = app.label;
     setActiveNav(app.id);
   } else {
